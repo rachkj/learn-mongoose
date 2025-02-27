@@ -66,10 +66,10 @@ const BookSchema: Schema<IBook> = new Schema(
  * @returns a promise of the books or an empty array.
  */
 BookSchema.statics.getAllBooksWithAuthors = async function (projection: string, sortOpts?: { [key: string]: 1 | -1 }): Promise<IBook[]> {
-  if(sortOpts) {
+  if (sortOpts) {
     return Book.find({}, projection)
-    .sort(sortOpts)
-    .populate('author');
+      .sort(sortOpts)
+      .populate('author');
   }
   return Book.find({}, projection).populate('author');
 }
@@ -95,7 +95,7 @@ BookSchema.statics.getBookCount = async function (filter?: FilterQuery<IBook>): 
 BookSchema.methods.saveBookOfExistingAuthorAndGenre = async function (author_family_name: string, author_first_name: string, genre_name: string, title: string): Promise<IBook> {
   const authorId = await Author.getAuthorIdByName(author_family_name, author_first_name);
   const genreId = await Genre.getGenreIdByName(genre_name);
-  if(!authorId || !genreId) {
+  if (!authorId || !genreId) {
     throw new Error('Author or genre not found');
   }
   this.title = title;
@@ -103,8 +103,22 @@ BookSchema.methods.saveBookOfExistingAuthorAndGenre = async function (author_fam
   this.isbn = 'ISBN2022';
   this.author = authorId;
   this.genre = [genreId];
-  return await this.save();  
+  return await this.save();
 }
+
+/**
+ * Fetch all books that belong to a specific genre.
+ * @param genreName - The genre name to filter books.
+ * @returns {Promise<IBook[]>} - A list of books in the given genre.
+ */
+BookSchema.statics.getBooksByGenre = async function (genreName: string): Promise<IBook[]> {
+  const genre = await Genre.findOne({ name: genreName });
+  if (!genre) {
+    throw new Error('Genre not found');
+  }
+  return this.find({ genre: genre._id }).populate('author');
+};
+
 
 /**
  * Compile the schema into a model and export it.
